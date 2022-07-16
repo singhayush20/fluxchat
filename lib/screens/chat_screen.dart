@@ -70,7 +70,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 //Implement logout functionality
                 _auth!.signOut();
                 Navigator.pop(context);
-                messageStream();
+                // messageStream();
               }),
         ],
         title: Text('Flux Chat'),
