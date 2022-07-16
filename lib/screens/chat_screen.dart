@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fluxchat/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fluxchat/screens/welcome_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   static String id = 'Chat String';
@@ -57,77 +59,105 @@ class _ChatScreenState extends State<ChatScreen> {
     getCurrentUser();
   }
 
+  Future<bool> popState() async {
+    return (await showDialog(
+          context: context,
+          builder: (context) => new AlertDialog(
+            title: new Text('Are you sure?'),
+            content: new Text('Do you want to exit '),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: new Text('No'),
+              ),
+              TextButton(
+                onPressed: () {
+                  //SystemNavigator.popUntil(context, (route) => false);
+                  SystemNavigator.pop();
+                },
+                child: new Text('Yes'),
+              ),
+            ],
+          ),
+        )) ??
+        false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        leading: null,
-        actions: <Widget>[
-          IconButton(
-              icon: Icon(Icons.close),
-              onPressed: () async {
-                //Implement logout functionality
-                _auth!.signOut();
-                Navigator.pop(context);
-                // messageStream();
-              }),
-        ],
-        title: Text('Flux Chat'),
-        backgroundColor: Colors.lightBlueAccent,
-      ),
-      body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            MessageStream(),
-            Container(
-              decoration: kMessageContainerDecoration,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      controller:
-                          messageTextController, //to clear the text field when send is pressed
-                      onChanged: (value) {
-                        //Do something with the user input.
-                        messageText = value;
-                      },
-                      decoration: kMessageTextFieldDecoration,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      FocusScope.of(context)
-                          .unfocus(); //close the keyboard which might be open
-                      //Implement send functionality.
-                      //Send to fire store
-                      //messageText+loggedInUser.email
-                      //The collection and field names must be
-                      //exactly same as used in fire store.
-                      if (messageText.trim() != '') {
-                        _firestore.collection('messages').add(
-                          {
-                            'text': messageText,
-                            'sender': loggedInUser!.email,
-                            'createdAt': Timestamp.now(),
-                          },
-                        );
-                      }
-                      messageTextController.clear();
-                      messageText = '';
-                    },
-                    child: Text(
-                      'Send',
-                      style: kSendButtonTextStyle,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+    return WillPopScope(
+      onWillPop: popState,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          leading: null,
+          actions: <Widget>[
+            IconButton(
+                icon: Icon(Icons.close),
+                onPressed: () async {
+                  //Implement logout functionality
+                  _auth!.signOut();
+                  //Navigator.popAndPushNamed(context, WelcomeScreen.id);
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, WelcomeScreen.id, (route) => false);
+                }),
           ],
+          title: Text('Flux Chat'),
+          backgroundColor: Colors.lightBlueAccent,
+        ),
+        body: SafeArea(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              MessageStream(),
+              Container(
+                decoration: kMessageContainerDecoration,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    Expanded(
+                      child: TextField(
+                        controller:
+                            messageTextController, //to clear the text field when send is pressed
+                        onChanged: (value) {
+                          //Do something with the user input.
+                          messageText = value;
+                        },
+                        decoration: kMessageTextFieldDecoration,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        FocusScope.of(context)
+                            .unfocus(); //close the keyboard which might be open
+                        //Implement send functionality.
+                        //Send to fire store
+                        //messageText+loggedInUser.email
+                        //The collection and field names must be
+                        //exactly same as used in fire store.
+                        if (messageText.trim() != '') {
+                          _firestore.collection('messages').add(
+                            {
+                              'text': messageText,
+                              'sender': loggedInUser!.email,
+                              'createdAt': Timestamp.now(),
+                            },
+                          );
+                        }
+                        messageTextController.clear();
+                        messageText = '';
+                      },
+                      child: Text(
+                        'Send',
+                        style: kSendButtonTextStyle,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
